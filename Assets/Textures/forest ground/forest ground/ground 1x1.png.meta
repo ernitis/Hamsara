@@ -48,7 +48,7 @@ TextureImporter:
   compressionQuality: 50
   spriteMode: 2
   spriteExtrude: 1
-  spriteMeshType: 1
+  spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 512
@@ -125,8 +125,14 @@ TextureImporter:
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
-      physicsShape: []
-      tessellationDetail: -1
+      physicsShape:
+      - - {x: 256, y: -81}
+        - {x: 256, y: 256}
+        - {x: -256, y: 256}
+        - {x: -256, y: -88}
+        - {x: -212, y: -95}
+        - {x: 212, y: -95}
+      tessellationDetail: 0
       bones: []
       spriteID: 1cb5a5dd5eaae8400800000000000000
       internalID: 328387727082544065

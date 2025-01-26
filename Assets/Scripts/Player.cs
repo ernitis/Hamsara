@@ -1,7 +1,9 @@
 using System;
+using Unity.Cinemachine;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
@@ -21,6 +23,8 @@ public class Player : MonoBehaviour
     public float bounce;
     public bool grounded = true;
     public Vector2 hitNormal;
+    public Animator anim;
+    public CinemachinePositionComposer cameraPositionComposer;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -38,7 +42,12 @@ public class Player : MonoBehaviour
             dir.y = 0;
         }
         if (rb.linearVelocityY < 0){
+            Debug.Log("Falling");
             fallingTimer = fallingTimer + Time.fixedDeltaTime;
+            if (!anim.GetBool("Falling") && fallingTimer > jumpDuration) anim.SetBool("Falling", true);
+        }
+        else{
+            if (anim.GetBool("Falling")) anim.SetBool("Falling", false);
         }
         //If you are on the ground, and not inputting anything, and going fast enough, just slow down.
         if (dir.x == 0 && Mathf.Abs(rb.linearVelocityX) > 0.1f && grounded) {
@@ -53,10 +62,26 @@ public class Player : MonoBehaviour
             rb.linearVelocityX = dir.x * velocity;
             lastVelocity = rb.linearVelocityX;
         }
+        if (dir.x == 0 && anim.GetBool("Walking")) {
+            anim.SetBool("Walking", false);
+            rb.constraints = RigidbodyConstraints2D.None;
+        }
     }
 
     public void LeftRightMovement(InputAction.CallbackContext ctx) {
         dir.x = ctx.ReadValue<float>();
+        if (dir.x > 0) {
+            rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+            rb.rotation = 0;
+            anim.SetBool("Walking", true);
+            anim.SetBool("Right", true);
+        }
+        else if (dir.x < 0) {
+            rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+            rb.rotation = 0;
+            anim.SetBool("Walking", true);
+            anim.SetBool("Right", false);
+        }
     }
 
     public void Jump(InputAction.CallbackContext ctx) {
@@ -66,22 +91,24 @@ public class Player : MonoBehaviour
         jumped = true;
     }
 
-    private void OnCollisionEnter2D(UnityEngine.Collision2D collision)
+    private void OnCollisionEnter2D(Collision2D collision)
     {
         hitNormal = collision.contacts[0].normal;
         if (collision.gameObject.tag == "Ground") {
+            Debug.Log("Collided with ground");
             jumped = false;
             grounded = true;
-            Debug.Log("FallingTimer was: " + fallingTimer);
             jumpTimer = fallingTimer / bounce;
-            Debug.Log("JumpTimer is: " + jumpTimer);
-            Debug.Log("Compared to threshold: " + bounceThreshold);
             fallingTimer = 0f;
+        }
+        if (collision.gameObject.tag == "Win") {
+            SceneManager.LoadScene("Win");
         }
     }
 
-    private void OnCollisionExit2D(UnityEngine.Collision2D collision) {
+    private void OnCollisionExit2D(Collision2D collision) {
         if (collision.gameObject.tag == "Ground") {
+            Debug.Log("Left Ground");
             jumped = true;
             grounded = false;
         }
