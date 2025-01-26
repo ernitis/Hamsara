@@ -3,6 +3,10 @@ using UnityEngine.SceneManagement;
 
 public class UIButtons : MonoBehaviour
 {
+    public void Reincarnate(){
+        SceneManager.LoadScene("Main Menu");
+    }
+
     public void Menu(){
         SceneManager.LoadScene("Main Menu");
     }

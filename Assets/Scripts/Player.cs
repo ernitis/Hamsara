@@ -22,9 +22,13 @@ public class Player : MonoBehaviour
     public float friction;
     public float bounce;
     public bool grounded = true;
+    public bool godmode = false;
     public Vector2 hitNormal;
     public Animator anim;
     public CinemachinePositionComposer cameraPositionComposer;
+    public GameObject canvas;
+    public SpriteRenderer sprite;
+    public AudioSource sound;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -33,38 +37,43 @@ public class Player : MonoBehaviour
 
     // Update is called once per frame
     void FixedUpdate(){
-        if (jumpTimer > bounceThreshold) {
-            Debug.Log("Jumped or bounced");
-            jumpTimer = jumpTimer - Time.fixedDeltaTime;
-            rb.linearVelocity = new Vector2(rb.linearVelocityX + hitNormal.x * jumpVelocity, hitNormal.y * jumpVelocity);
+        if (!godmode){
+            if (jumpTimer > bounceThreshold) {
+                Debug.Log("Jumped or bounced");
+                jumpTimer = jumpTimer - Time.fixedDeltaTime;
+                rb.linearVelocity = new Vector2(rb.linearVelocityX + hitNormal.x * jumpVelocity, hitNormal.y * jumpVelocity);
+            }
+            else if (dir.y != 0) {
+                dir.y = 0;
+            }
+            if (rb.linearVelocityY < 0){
+                Debug.Log("Falling");
+                fallingTimer = fallingTimer + Time.fixedDeltaTime;
+                if (!anim.GetBool("Falling") && fallingTimer > jumpDuration) anim.SetBool("Falling", true);
+            }
+            else{
+                if (anim.GetBool("Falling")) anim.SetBool("Falling", false);
+            }
+            //If you are on the ground, and not inputting anything, and going fast enough, just slow down.
+            if (dir.x == 0 && Mathf.Abs(rb.linearVelocityX) > 0.1f && grounded) {
+                rb.linearVelocityX = rb.linearVelocityX / (1 + (friction/100));
+                lastVelocity = rb.linearVelocityX;
+            }
+            //If you are n
+            else if (!grounded) {
+                rb.linearVelocityX = lastVelocity;
+            }
+            else if (grounded) {
+                rb.linearVelocityX = dir.x * velocity;
+                lastVelocity = rb.linearVelocityX;
+            }
+            if (dir.x == 0 && anim.GetBool("Walking")) {
+                anim.SetBool("Walking", false);
+                rb.constraints = RigidbodyConstraints2D.None;
+            }
         }
-        else if (dir.y != 0) {
-            dir.y = 0;
-        }
-        if (rb.linearVelocityY < 0){
-            Debug.Log("Falling");
-            fallingTimer = fallingTimer + Time.fixedDeltaTime;
-            if (!anim.GetBool("Falling") && fallingTimer > jumpDuration) anim.SetBool("Falling", true);
-        }
-        else{
-            if (anim.GetBool("Falling")) anim.SetBool("Falling", false);
-        }
-        //If you are on the ground, and not inputting anything, and going fast enough, just slow down.
-        if (dir.x == 0 && Mathf.Abs(rb.linearVelocityX) > 0.1f && grounded) {
-             rb.linearVelocityX = rb.linearVelocityX / (1 + (friction/100));
-             lastVelocity = rb.linearVelocityX;
-        }
-        //If you are n
-        else if (!grounded) {
-            rb.linearVelocityX = lastVelocity;
-        }
-        else if (grounded) {
-            rb.linearVelocityX = dir.x * velocity;
-            lastVelocity = rb.linearVelocityX;
-        }
-        if (dir.x == 0 && anim.GetBool("Walking")) {
-            anim.SetBool("Walking", false);
-            rb.constraints = RigidbodyConstraints2D.None;
+        else {
+            rb.linearVelocity = dir * velocity;
         }
     }
 
@@ -85,16 +94,37 @@ public class Player : MonoBehaviour
     }
 
     public void Jump(InputAction.CallbackContext ctx) {
-        if (!jumped){
-            jumpTimer = jumpDuration;
+        if (!godmode) {
+            if (!jumped){
+                jumpTimer = jumpDuration;
+            }
+            jumped = true;
         }
-        jumped = true;
+        else {
+            dir.y = ctx.ReadValue<float>();
+        }
+    }
+
+    public void Pause(InputAction.CallbackContext ctx) {
+        canvas.SetActive(!canvas.activeSelf);
+    }
+
+    public void GodMode(){
+        if (godmode) {
+            godmode = false;
+            sprite.color = new Color(1f, 1f, 1f, 1f);
+        }
+        else {
+            godmode = true;
+            sprite.color = new Color(0.933962f, 0.8823289f, 0f, 1f);
+        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
         hitNormal = collision.contacts[0].normal;
         if (collision.gameObject.tag == "Ground") {
+            if (!godmode) sound.Play();
             Debug.Log("Collided with ground");
             jumped = false;
             grounded = true;
