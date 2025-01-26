@@ -124,7 +124,10 @@ public class Player : MonoBehaviour
     {
         hitNormal = collision.contacts[0].normal;
         if (collision.gameObject.tag == "Ground") {
-            if (!godmode) sound.Play();
+            if (!godmode) {
+                sound.pitch = UnityEngine.Random.Range(0.6f, 1f);
+                sound.Play();
+            }
             Debug.Log("Collided with ground");
             jumped = false;
             grounded = true;
